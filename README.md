@@ -49,17 +49,17 @@ Frontend
 
 ## Author
 
--Mustak Kabir
--Brunel University London
+- Mustak Kabir
+- Brunel University London
 
 ## 1. Future Updates
 
--Whenever change code:
--Step 1: Pull latest changes
--git pull origin main --rebase
+- ## Whenever change code:
+- Step 1: Pull latest changes
+- git pull origin main --rebase
 
--Step 2: If no errors → push
--git push origin main
+- Step 2: If no errors → push
+- git push origin main
 
 
 
