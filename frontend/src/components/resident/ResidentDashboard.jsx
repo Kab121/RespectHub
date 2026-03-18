@@ -1,9 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../utils/AuthContext.jsx";
-import { actionAPI, actionTypesAPI } from "../../services/api";
+import { actionAPI, actionTypesAPI, userAPI } from "../../services/api";
 import { Award, TrendingUp, Star, Activity } from "lucide-react";
 
-/** Badge thresholds */
 const BADGES = [
   { name: "Bronze", min: 0, nextAt: 100 },
   { name: "Silver", min: 100, nextAt: 250 },
@@ -36,6 +35,7 @@ export default function ResidentDashboard() {
 
   const [actions, setActions] = useState([]);
   const [actionTypes, setActionTypes] = useState({});
+  const [leaderboard, setLeaderboard] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -43,13 +43,17 @@ export default function ResidentDashboard() {
       setLoading(true);
 
       try {
-        const [actionsRes, typesRes] = await Promise.all([
+        const [actionsRes, typesRes, leaderboardRes] = await Promise.all([
           actionAPI.getMyActions(),
           actionTypesAPI.getAll(),
+          userAPI.getLeaderboard(),
         ]);
 
         const actionsData = Array.isArray(actionsRes.data) ? actionsRes.data : [];
         const typesData = Array.isArray(typesRes.data) ? typesRes.data : [];
+        const leaderboardData = Array.isArray(leaderboardRes.data)
+          ? leaderboardRes.data
+          : [];
 
         const typesMap = {};
         typesData.forEach((type) => {
@@ -58,10 +62,12 @@ export default function ResidentDashboard() {
 
         setActions(actionsData);
         setActionTypes(typesMap);
+        setLeaderboard(leaderboardData);
       } catch (err) {
         console.error("Failed to load dashboard data:", err);
         setActions([]);
         setActionTypes({});
+        setLeaderboard([]);
       } finally {
         setLoading(false);
       }
@@ -84,12 +90,10 @@ export default function ResidentDashboard() {
     return actions.reduce((sum, action) => {
       if ((action.status || "").toLowerCase() !== "approved") return sum;
 
-      // safest source: saved on approval
       if (action.pointsGranted != null) {
         return sum + Number(action.pointsGranted || 0);
       }
 
-      // fallback from action type map
       const typeId =
         action.actionTypeId || action.action_type_id || action.ActionTypeId;
 
@@ -106,6 +110,17 @@ export default function ResidentDashboard() {
     if (!badgeInfo.next_badge_threshold) return 100;
     return Math.min(100, (totalPoints / badgeInfo.next_badge_threshold) * 100);
   }, [badgeInfo.next_badge_threshold, totalPoints]);
+
+  const userRank = useMemo(() => {
+    if (!user?.id || leaderboard.length === 0) return null;
+
+    const sorted = [...leaderboard].sort(
+      (a, b) => Number(b.pointsTotal || 0) - Number(a.pointsTotal || 0)
+    );
+
+    const index = sorted.findIndex((member) => member.id === user.id);
+    return index >= 0 ? index + 1 : null;
+  }, [leaderboard, user]);
 
   if (loading) {
     return (
@@ -149,9 +164,9 @@ export default function ResidentDashboard() {
           </div>
           <div className="stat-content">
             <p className="stat-label">Rank</p>
-            <h2 className="stat-value">—</h2>
+            <h2 className="stat-value">{userRank ? `#${userRank}` : "—"}</h2>
             <p className="text-muted" style={{ marginTop: 6 }}>
-              (needs leaderboard endpoint)
+              {userRank ? "Among residents" : "Not ranked yet"}
             </p>
           </div>
         </div>

@@ -79,6 +79,8 @@ export const actionAPI = {
 -------------------------------- */
 
 export const adminAPI = {
+  getStats: () => api.get("/admin/stats"),
+
   getActions: (status = "pending") =>
     api.get(`/admin/actions?status=${status}`),
 

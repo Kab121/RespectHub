@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { userAPI } from "../../services/api.js";
 import { useAuth } from "../../utils/AuthContext.jsx";
-import { Trophy, Medal, Award, TrendingUp } from "lucide-react";
+import { Trophy, Medal, Award } from "lucide-react";
 
 export default function Leaderboard() {
   const { user } = useAuth();
@@ -15,25 +15,41 @@ export default function Leaderboard() {
   const loadLeaderboard = async () => {
     try {
       const response = await userAPI.getLeaderboard();
-      setLeaderboard(response.data);
+      const data = Array.isArray(response.data) ? response.data : [];
+
+      // sort highest points first
+      data.sort((a, b) => Number(b.pointsTotal || 0) - Number(a.pointsTotal || 0));
+
+      setLeaderboard(data);
     } catch (err) {
       console.error("Failed to load leaderboard:", err);
+      setLeaderboard([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const getMedalIcon = (rank) => {
-    switch (rank) {
-      case 1:
-        return <Trophy className="medal gold" />;
-      case 2:
-        return <Medal className="medal silver" />;
-      case 3:
-        return <Medal className="medal bronze" />;
-      default:
-        return <Award className="medal default" />;
-    }
+  const getDisplayName = (member) => {
+    return member.fullName || member.name || "Unknown Resident";
+  };
+
+  const getPoints = (member) => {
+    return Number(member.pointsTotal ?? member.total_points ?? 0);
+  };
+
+  const getBadgeName = (points) => {
+    if (points >= 1000) return "Diamond";
+    if (points >= 500) return "Platinum";
+    if (points >= 250) return "Gold";
+    if (points >= 100) return "Silver";
+    return "Bronze";
+  };
+
+  const getRankIcon = (rank) => {
+    if (rank === 1) return <Trophy className="medal gold" />;
+    if (rank === 2) return <Medal className="medal silver" />;
+    if (rank === 3) return <Medal className="medal bronze" />;
+    return <Award className="medal default" />;
   };
 
   if (loading) {
@@ -50,7 +66,7 @@ export default function Leaderboard() {
     <div className="page-container">
       <div className="page-header">
         <h1>Community Leaderboard 🏆</h1>
-        <p>See how you rank among community members</p>
+        <p>See how residents rank by earned points and badges</p>
       </div>
 
       {leaderboard.length === 0 ? (
@@ -60,71 +76,47 @@ export default function Leaderboard() {
         </div>
       ) : (
         <div className="leaderboard-container">
-          {/* Top 3 Podium */}
-          <div className="podium">
-            {leaderboard.slice(0, 3).map((member, index) => (
-              <div
-                key={member.id}
-                className={`podium-place place-${index + 1} ${
-                  member.id === currentUserId ? "current-user" : ""
-                }`}
-              >
-                <div className="podium-rank">{getMedalIcon(index + 1)}</div>
-                <div className="podium-avatar">
-                  {(member.name || "?").charAt(0).toUpperCase()}
-                </div>
-                <h3 className="podium-name">{member.name}</h3>
-                <p className="podium-flat">{member.flat_number}</p>
+          <div className="leaderboard-list">
+            <div className="list-header">
+              <span>Rank</span>
+              <span>Resident</span>
+              <span>Badge</span>
+              <span>Points</span>
+            </div>
 
-                <div className="podium-stats">
-                  <div className="stat">
-                    <TrendingUp size={16} />
-                    <span>{member.total_points} pts</span>
-                  </div>
-                  <div className="stat">
-                    <Award size={16} />
-                    <span>{member.current_badge}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+            {leaderboard.map((member, index) => {
+              const displayName = getDisplayName(member);
+              const points = getPoints(member);
+              const badge = getBadgeName(points);
+              const rank = index + 1;
 
-          {/* Rest of the leaderboard */}
-          {leaderboard.length > 3 && (
-            <div className="leaderboard-list">
-              <div className="list-header">
-                <span>Rank</span>
-                <span>Resident</span>
-                <span>Badge</span>
-                <span>Points</span>
-              </div>
-
-              {leaderboard.slice(3).map((member, index) => (
+              return (
                 <div
                   key={member.id}
                   className={`list-item ${
                     member.id === currentUserId ? "current-user" : ""
                   }`}
                 >
-                  <span className="rank">#{index + 4}</span>
+                  <div className="rank" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    {getRankIcon(rank)}
+                    <span>#{rank}</span>
+                  </div>
 
                   <div className="member-info">
                     <div className="member-avatar">
-                      {(member.name || "?").charAt(0).toUpperCase()}
+                      {displayName.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <p className="member-name">{member.name}</p>
-                      <p className="member-flat">{member.flat_number}</p>
+                      <p className="member-name">{displayName}</p>
                     </div>
                   </div>
 
-                  <span className="badge-name">{member.current_badge}</span>
-                  <span className="points">{member.total_points}</span>
+                  <span className="badge-name">{badge}</span>
+                  <span className="points">{points}</span>
                 </div>
-              ))}
-            </div>
-          )}
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

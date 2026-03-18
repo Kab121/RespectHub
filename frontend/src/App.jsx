@@ -33,6 +33,7 @@ export default function App() {
           </ProtectedRoute>
         }
       />
+
       <Route
         path="/submit"
         element={
@@ -43,6 +44,7 @@ export default function App() {
           </ProtectedRoute>
         }
       />
+
       <Route
         path="/my-actions"
         element={
@@ -53,6 +55,7 @@ export default function App() {
           </ProtectedRoute>
         }
       />
+
       <Route
         path="/leaderboard"
         element={
@@ -75,12 +78,24 @@ export default function App() {
           </ProtectedRoute>
         }
       />
+
       <Route
         path="/admin/review"
         element={
           <ProtectedRoute requiredRole="admin">
             <Layout>
               <ReviewQueue />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/leaderboard"
+        element={
+          <ProtectedRoute requiredRole="admin">
+            <Layout>
+              <Leaderboard />
             </Layout>
           </ProtectedRoute>
         }
