@@ -10,6 +10,7 @@ const authRoutes = require("./routes/auth.routes");
 const actionRoutes = require("./routes/action.routes");
 const adminRoutes = require("./routes/admin.routes");
 const leaderboardRoutes = require("./routes/leaderboard.routes");
+const chatbotRoutes = require("./routes/chatbot.routes"); // ✅ added
 
 const app = express();
 
@@ -20,13 +21,13 @@ const app = express();
 // ✅ CORS: allow your frontend(s)
 const allowedOrigins = [
   "http://localhost:5173", // Vite
-  "http://localhost:3000", // CRA
+  "http://localhost:3000", // React app
 ];
 
 app.use(
   cors({
     origin: (origin, cb) => {
-      // allow REST tools like Postman (no origin)
+      // allow Postman / server-side requests
       if (!origin) return cb(null, true);
       if (allowedOrigins.includes(origin)) return cb(null, true);
       return cb(new Error("Not allowed by CORS"));
@@ -36,11 +37,9 @@ app.use(
 );
 
 // ✅ Serve uploaded files publicly
-// Files saved in: backend/uploads/<filename>
-// Accessible via: http://localhost:5000/uploads/<filename>
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// Parse JSON bodies (still needed for non-file routes)
+// Parse request bodies
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -56,6 +55,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api", actionRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api", leaderboardRoutes);
+app.use("/api/chatbot", chatbotRoutes); // ✅ added
 
 /* ---------------------------
    404 handler
@@ -65,22 +65,19 @@ app.use((req, res) => {
 });
 
 /* ---------------------------
-   Global error handler (helps with multer + CORS errors)
+   Global error handler
 ---------------------------- */
 app.use((err, req, res, next) => {
   console.error("❌ Error:", err.message);
 
-  // Multer file too large
   if (err.code === "LIMIT_FILE_SIZE") {
     return res.status(400).json({ message: "File too large" });
   }
 
-  // Multer invalid file type
   if (err.message?.includes("Only images, videos, or PDF")) {
     return res.status(400).json({ message: err.message });
   }
 
-  // CORS errors
   if (err.message === "Not allowed by CORS") {
     return res.status(403).json({ message: "CORS blocked this request" });
   }
@@ -97,6 +94,7 @@ sequelize
   .sync({ alter: true })
   .then(() => {
     console.log("✅ DB synced");
+    console.log("✅ OpenAI key loaded:", !!process.env.OPENAI_API_KEY); // optional debug
     app.listen(PORT, () => console.log(`✅ Server running on ${PORT}`));
   })
   .catch((err) => {

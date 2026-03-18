@@ -99,4 +99,12 @@ export const userAPI = {
   getLeaderboard: () => api.get("/leaderboard"),
 };
 
+/* =========================
+   🤖 CHATBOT (NEW)
+========================= */
+export const chatbotAPI = {
+  ask: (data) => api.post("/chatbot/ask", data),
+};
+
+
 export default api;
