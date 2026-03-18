@@ -54,10 +54,12 @@ Frontend
 
 ## 1. Future Updates
 
--Whenever you change code:
--git add .
--git commit -m "Update review queue logic"
--git push
+-Whenever change code:
+-Step 1: Pull latest changes
+-git pull origin main --rebase
+
+-Step 2: If no errors → push
+-git push origin main
 
 
 
