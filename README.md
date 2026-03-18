@@ -56,10 +56,10 @@ Frontend
 
 - ## Whenever change code:
 - Step 1: Pull latest changes
-- git pull origin main --rebase
+  -git pull origin main --rebase
 
 - Step 2: If no errors → push
-- git push origin main
+  -git push origin main
 
 
 
